@@ -6,204 +6,12 @@
   <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
   <script src="xlsx.full.min.js"></script>
   <script src="echarts.min.js"></script>
-  <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
+  <!-- <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.css" />
   <link type="text/css" rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid-theme.min.css" />
 
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script>
-  <script>
-    var outset
-    $(document).ready(function () {
-      $("#fileUploader").change(function (evt) {
-        var selectedFile = evt.target.files[0];
-        var reader = new FileReader();
-        reader.onload = function (event) {
-          var data = event.target.result;
-          var workbook = XLSX.read(data, {
-            type: 'binary'
-          });
-          workbook.SheetNames.forEach(function (sheetName) {
-            var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-            if (XL_row_object.length > 0) {
-              // document.getElementById("jsonObject").innerHTML = JSON.stringify(XL_row_object);
-              var outputcontext = JSON.stringify(XL_row_object);
-              // var outset = new Set([outputcontext]);
-              outset = JSON.parse(outputcontext);
-              //整理属性级数
-              var typeclasses = 0;
-              for (var i = 0; i < outset.length; i++) {
-                if (outset[i][`属性${i + 1}`]) {
-                  typeclasses = i + 1;
-                }
-              }
-              var typeset = new Array();
-              for (var i = 0; i < typeclasses; i++) {
-                typeset[i] = new Array();
-              }
-              for (var i = 0; i < outset.length; i++) {
-                for (var j = 0; j < typeclasses; j++) {
-                  if (outset[i][`属性${j + 1}`]) {
-                    typeset[j].push(outset[i][`属性${j + 1}`]);
-                  }
-                }
-              }
-              for (var i = 0; i < typeset.length; i++) {
-                typeset[i] = new Set(typeset[i]);//读取所有各级属性可能的值并去重
-                typeset[i] = Array.from(typeset[i]);//去重后集合转数组
-              }
-              function p2child(a, b, c) {
-                for (var i = 0; i < outset.length; i++) {
-                  if (outset[i][`属性${a}`] == b && outset[i][`属性${a + 1}`] == c) {
-                    return true;
-                  }
-                }
-                return false;
-              }
-              //生成echarts所需的json数据结构
-              function treedata(inarray) {
-                var rootparent = {}
-                var root = null
-                var Node = function (data) {
-                  this.name = data;
-                  this.children = [];
-                }
-                root = [new Node(inarray[0][0])];
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsgrid/1.5.3/jsgrid.min.js"></script> -->
 
-                // console.log(JSON.stringify(root));
-                rootparent = root;
-                for (var i = 1; i < typeclasses; i++) {
-                  var thisroot = []
-                  for (var h = 0; h < root.length; h++) {
-                    for (var j = 0; j < typeset[i].length; j++) {
-                      if (p2child(i, root[h].name, typeset[i][j])) {
-                        var nodes = new Node(inarray[i][j]);
-                        root[h].children.push(nodes);
-                        thisroot.push(nodes);
-                      }
-                    }
-                  }
-                  root = thisroot;
-                }
-                return rootparent;
-              }
-              var output = treedata(typeset);
-              var aa = JSON.parse(JSON.stringify(output));
-              draw(aa);
-            }
-          })
-        };
-        reader.onerror = function (event) {
-          console.error("File could not be read! Code " + event.target.error.code);
-        };
-        // 读取上传文件为二进制
-        reader.readAsBinaryString(selectedFile);
-      });
-    });
-    function justifyobj(obj, tables) {//判断该对象是否拥有每个属性
-      for (var i = 0; i < tables.length; i++) {
-        if (obj[`属性${i + 1}`] != tables[i]) {
-          return false
-        }
-      }
-      return true
-    }
-    function drawtable(tables) {//更改table 数组，根据读取选择的树形图节点筛选输出数据
-      var out = [];
-      for (var i = 0; i < outset.length; i++) {
-        if (justifyobj(outset[i], tables)) {
-          out.push(outset[i]);
-        }
-      }
-      return out
-    }
-    function changetable() {//画表格
-      
-      console.log('aaa');
-      tablesets = $('#main div:last').text().split('.');
-      if (tablesets) {
-        console.log(tablesets);
-        var tabledata = drawtable(tablesets);
-        var tdata = JSON.parse(JSON.stringify(tabledata[0]));
-        console.log(tdata['属性1']);
-        console.log(tabledata);
-        var headtdata = Object.keys(tdata);
-        $("#jsGrid").jsGrid({
-          width: "100%",
-          paging: true,
-          data: tabledata,
-          pageSize: 10,
-          pageNextText: "首页",
-          pageLastText: "最后一页",
-          pageButtonCount: 5,
-          pageNavigatorNextText: "...",
-          pageNavigatorPrevText: "...",
-          fields: [
-            { name: `${headtdata[0]}`, type: "text", validate: "required" },
-            { name: `${headtdata[1]}`, type: "number" },
-            { name: `${headtdata[2]}`, type: "text" },
-            { name: `${headtdata[3]}`, type: "text", validate: "required" },
-            { name: `${headtdata[4]}`, type: "text", validate: "required" },
-            { name: `${headtdata[5]}`, type: "text" },
-            { name: `${headtdata[6]}`, type: "text", validate: "required" }
-          ]
-        });
-      }
-      var nowtitle = document.getElementById('tableinfo');
-      nowtitle.innerHTML = `${tablesets}`;
-      $('.jsgrid-pager-container').insertBefore($('.jsgrid-grid-header'));
-    }
-    //画树形图
-    function draw(data) {
-      var myChart = echarts.init(document.getElementById('main'));
-      document.getElementById('main').addEventListener('click', changetable);//监听点击事件
-      echarts.util.each(data.children, function (datum, index) {
-        index % 2 === 0 && (datum.collapsed = true);
-      });
-      myChart.setOption(option = {
-        tooltip: {
-          trigger: 'item',
-          triggerOn: 'mousemove'
-        },
-        series: [
-          {
-            type: 'tree',
-
-            data: data,
-
-            top: '1%',
-            left: '12%',
-            bottom: '1%',
-            right: '20%',
-
-            symbolSize: 7,
-
-            label: {
-              normal: {
-                position: 'left',
-                verticalAlign: 'middle',
-                align: 'right',
-                fontSize: 13,
-              }
-            },
-
-            leaves: {
-              label: {
-                normal: {
-                  position: 'right',
-                  verticalAlign: 'middle',
-                  align: 'left'
-                }
-              }
-            },
-
-            expandAndCollapse: true,
-            animationDuration: 550,
-            animationDurationUpdate: 750
-          }
-        ]
-      });
-    };
-  </script>
 </head>
 
 <body>
@@ -212,11 +20,212 @@
   <div id="content">
     <div id="main" style="width: 500px;height:400px;"></div>
     <div id="righttable">
-      <h3 id="tableinfo"></h3>
-      <div id="jsGrid"></div>
     </div>
   </div>
 </body>
+<script>
+  var outset
+  $(document).ready(function () {
+    $("#fileUploader").change(function (evt) {
+      var selectedFile = evt.target.files[0];
+      var reader = new FileReader();
+      reader.onload = function (event) {
+        var data = event.target.result;
+        var workbook = XLSX.read(data, {
+          type: 'binary'
+        });
+        workbook.SheetNames.forEach(function (sheetName) {
+          var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+          if (XL_row_object.length > 0) {
+            // document.getElementById("jsonObject").innerHTML = JSON.stringify(XL_row_object);
+            var outputcontext = JSON.stringify(XL_row_object);
+            // var outset = new Set([outputcontext]);
+            outset = JSON.parse(outputcontext);
+            //整理属性级数
+            var typeclasses = 0;
+            for (var i = 0; i < outset.length; i++) {
+              if (outset[i][`属性${i + 1}`]) {
+                typeclasses = i + 1;
+              }
+            }
+            var typeset = new Array();
+            for (var i = 0; i < typeclasses; i++) {
+              typeset[i] = new Array();
+            }
+            for (var i = 0; i < outset.length; i++) {
+              for (var j = 0; j < typeclasses; j++) {
+                if (outset[i][`属性${j + 1}`]) {
+                  typeset[j].push(outset[i][`属性${j + 1}`]);
+                }
+              }
+            }
+            for (var i = 0; i < typeset.length; i++) {
+              typeset[i] = new Set(typeset[i]);//读取所有各级属性可能的值并去重
+              typeset[i] = Array.from(typeset[i]);//去重后集合转数组
+            }
+            function p2child(a, b, c) {
+              for (var i = 0; i < outset.length; i++) {
+                if (outset[i][`属性${a}`] == b && outset[i][`属性${a + 1}`] == c) {
+                  return true;
+                }
+              }
+              return false;
+            }
+            //生成echarts所需的json数据结构
+            function treedata(inarray) {
+              var rootparent = {}
+              var root = null
+              var Node = function (data) {
+                this.name = data;
+                this.children = [];
+              }
+              root = [new Node(inarray[0][0])];
+
+              // console.log(JSON.stringify(root));
+              rootparent = root;
+              for (var i = 1; i < typeclasses; i++) {
+                var thisroot = []
+                for (var h = 0; h < root.length; h++) {
+                  for (var j = 0; j < typeset[i].length; j++) {
+                    if (p2child(i, root[h].name, typeset[i][j])) {
+                      var nodes = new Node(inarray[i][j]);
+                      root[h].children.push(nodes);
+                      thisroot.push(nodes);
+                    }
+                  }
+                }
+                root = thisroot;
+              }
+              return rootparent;
+            }
+            var output = treedata(typeset);
+            var aa = JSON.parse(JSON.stringify(output));
+            draw(aa);
+          }
+        })
+      };
+      reader.onerror = function (event) {
+        console.error("File could not be read! Code " + event.target.error.code);
+      };
+      // 读取上传文件为二进制
+      reader.readAsBinaryString(selectedFile);
+    });
+  });
+  function justifyobj(obj, tables) {//判断该对象是否拥有每个属性
+    for (var i = 0; i < tables.length; i++) {
+      if (obj[`属性${i + 1}`] != tables[i]) {
+        return false
+      }
+    }
+    return true
+  }
+  function drawtable(tables) {//更改table 数组，根据读取选择的树形图节点筛选输出数据
+    var out = [];
+    for (var i = 0; i < outset.length; i++) {
+      if (justifyobj(outset[i], tables)) {
+        out.push(outset[i]);
+      }
+    }
+    return out
+  }
+  function changetable() {//画表格
+    document.getElementById('righttable').innerHTML = null;
+    console.log('aaa');
+    tablesets = $('#main div:last').text().split('.');
+    if (tablesets) {
+      console.log(tablesets);
+      var tabledata = drawtable(tablesets);
+      var tdata = JSON.parse(JSON.stringify(tabledata[0]));
+      console.log(tdata['属性1']);
+      console.log(tabledata);
+      var headtdata = Object.keys(tdata);
+      console.log(headtdata); 
+      var thistable = document.createElement('table');
+      var tablehead = document.createElement('tr');
+      var tablebody = document.createElement('tbody');
+      document.getElementById('righttable').appendChild(thistable);
+      thistable.appendChild(tablehead);
+      thistable.appendChild(tablebody);
+      var nowdata = tabledata.slice(0,9);
+
+      headtdata.forEach(function(value){
+        var thisattr = document.createElement('th');
+        tablehead.appendChild(thisattr);
+        thisattr.innerHTML = value;
+        });
+      tabledata.forEach(function(value){
+        var thisrow = document.createElement('tr');
+        tablebody.appendChild(thisrow);
+        var attrvalue = [];
+        for(var i in value){
+          attrvalue.push(value[i])
+        }
+        console.log(attrvalue);
+        attrvalue.forEach(function(value){
+          thiscube = document.createElement('td');
+          thisrow.appendChild(thiscube);
+          thiscube.innerHTML=value;
+        })
+      })
+      
+    }
+    var nowtitle = $('#tableinfo');
+    console.log(nowtitle);
+
+
+  }
+  //画树形图
+  function draw(data) {
+    var myChart = echarts.init(document.getElementById('main'));
+    document.getElementById('main').addEventListener('click', changetable);//监听点击事件
+    echarts.util.each(data.children, function (datum, index) {
+      index % 2 === 0 && (datum.collapsed = true);
+    });
+    myChart.setOption(option = {
+      tooltip: {
+        trigger: 'item',
+        triggerOn: 'mousemove'
+      },
+      series: [
+        {
+          type: 'tree',
+
+          data: data,
+
+          top: '1%',
+          left: '12%',
+          bottom: '1%',
+          right: '20%',
+
+          symbolSize: 7,
+
+          label: {
+            normal: {
+              position: 'left',
+              verticalAlign: 'middle',
+              align: 'right',
+              fontSize: 13,
+            }
+          },
+
+          leaves: {
+            label: {
+              normal: {
+                position: 'right',
+                verticalAlign: 'middle',
+                align: 'left'
+              }
+            }
+          },
+
+          expandAndCollapse: true,
+          animationDuration: 550,
+          animationDurationUpdate: 750
+        }
+      ]
+    });
+  };
+</script>
 <style>
   #content {
     display: flex;
@@ -224,28 +233,18 @@
     justify-content: flex-start;
   }
 
-  table {
+  table,th,td,tr {
     text-align: center;
     font-size: 12px;
-  }
-  .jsgrid{
-    padding-top: 40px
-  }
-  .jsgrid-pager-current-page {
-    font-size: 30px;
+    border: 1px solid black;
+    border-collapse: collapse;
   }
 
-  .jsgrid-pager-container {
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    margin-bottom: 0px;
-  }
-  #tableinfo{
+  #tableinfo {
     margin: 0;
     position: absolute;
   }
+
   a {
     text-decoration: none;
   }
