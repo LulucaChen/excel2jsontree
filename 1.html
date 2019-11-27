@@ -19,7 +19,14 @@
   </br></br>
   <div id="content">
     <div id="main" style="width: 500px;height:400px;"></div>
-    <div id="righttable">
+    <div id="rightcontent">
+      <div id="righttable">
+      </div>
+      <div id="paging">
+        <button id="pre" class="one"></button>
+        <div id="number"></div>
+        <button id="next" class="one"></button>
+      </div>
     </div>
   </div>
 </body>
@@ -41,13 +48,18 @@
             var outputcontext = JSON.stringify(XL_row_object);
             // var outset = new Set([outputcontext]);
             outset = JSON.parse(outputcontext);
+            console.log(outset);
             //整理属性级数
             var typeclasses = 0;
-            for (var i = 0; i < outset.length; i++) {
-              if (outset[i][`属性${i + 1}`]) {
-                typeclasses = i + 1;
+            function getclass() {
+              for (var i = 0; i < 10; i++) {
+                if (JSON.stringify(outset).indexOf(`属性${typeclasses + 1}`) >= 0) {
+                  typeclasses = typeclasses + 1;
+                }
               }
+              return typeclasses;
             }
+            getclass();//判断树有多少层
             var typeset = new Array();
             for (var i = 0; i < typeclasses; i++) {
               typeset[i] = new Array();
@@ -59,15 +71,25 @@
                 }
               }
             }
+            console.log(typeset);
             for (var i = 0; i < typeset.length; i++) {
               typeset[i] = new Set(typeset[i]);//读取所有各级属性可能的值并去重
               typeset[i] = Array.from(typeset[i]);//去重后集合转数组
             }
             function p2child(a, b, c) {
               for (var i = 0; i < outset.length; i++) {
-                if (outset[i][`属性${a}`] == b && outset[i][`属性${a + 1}`] == c) {
-                  return true;
+                var choose = true;
+                for (var j = 0; j < b.classes.length; j++) {
+                  if (!(outset[i][`属性${j + 1}`] == b.classes[j])) {
+                    choose = false;
+                  }
                 }
+                if (choose) {
+                  if (outset[i][`属性${j + 1}`] == c) {
+                    return true;
+                  }
+                }
+
               }
               return false;
             }
@@ -78,17 +100,18 @@
               var Node = function (data) {
                 this.name = data;
                 this.children = [];
+                this.classes = [data];
               }
               root = [new Node(inarray[0][0])];
 
-              // console.log(JSON.stringify(root));
-              rootparent = root;
+              rootparent = root;//root是每一层的节点
               for (var i = 1; i < typeclasses; i++) {
                 var thisroot = []
                 for (var h = 0; h < root.length; h++) {
                   for (var j = 0; j < typeset[i].length; j++) {
-                    if (p2child(i, root[h].name, typeset[i][j])) {
-                      var nodes = new Node(inarray[i][j]);
+                    var nodes = new Node(inarray[i][j]);//新建节点
+                    if (p2child(i, root[h], typeset[i][j])) {
+                      nodes.classes = root[h].classes.concat(nodes.classes);
                       root[h].children.push(nodes);
                       thisroot.push(nodes);
                     }
@@ -99,7 +122,10 @@
               return rootparent;
             }
             var output = treedata(typeset);
+            console.log(output);
+            console.log(typeset);
             var aa = JSON.parse(JSON.stringify(output));
+            console.log(aa);
             draw(aa);
           }
         })
@@ -119,7 +145,7 @@
     }
     return true
   }
-  function drawtable(tables) {//更改table 数组，根据读取选择的树形图节点筛选输出数据
+  function drawtable(tables, total) {//更改table 数组，根据读取选择的树形图节点筛选输出数据
     var out = [];
     for (var i = 0; i < outset.length; i++) {
       if (justifyobj(outset[i], tables)) {
@@ -128,46 +154,93 @@
     }
     return out
   }
-  function changetable() {//画表格
-    document.getElementById('righttable').innerHTML = null;
-    console.log('aaa');
-    tablesets = $('#main div:last').text().split('.');
-    if (tablesets) {
-      console.log(tablesets);
-      var tabledata = drawtable(tablesets);
-      var tdata = JSON.parse(JSON.stringify(tabledata[0]));
-      console.log(tdata['属性1']);
+  function drawbutton(val, total) {//写button
+    document.getElementById('number').innerHTML = null;
+    if (val > 5) {
+      document.getElementById('paging').style.visibility = 'visible';
+      if (val / 5 < 5) {
+        for (var i = 0; i < Math.ceil(val / 5); i++) {
+          var nowbutton = document.createElement('button');
+          nowbutton.className = 'obnumber';
+          nowbutton.onclick = function () {
+            console.log(total);
+            repage(i, total);
+          };
+          document.getElementById('number').appendChild(nowbutton);
+          nowbutton.innerHTML = i + 1;
+        }
+      }
+    }
+  }
+  function drawpage(tabledata, total) {
+    if (tabledata[0]) {
       console.log(tabledata);
+      var tdata = JSON.parse(JSON.stringify(tabledata[0]));
       var headtdata = Object.keys(tdata);
-      console.log(headtdata); 
+      // var headtdata = ["序号", "标准代号", "标准名称", "标准状态", "属性1", "属性2", "属性3", "属性4"];
+      console.log(headtdata);
       var thistable = document.createElement('table');
       var tablehead = document.createElement('tr');
       var tablebody = document.createElement('tbody');
       document.getElementById('righttable').appendChild(thistable);
       thistable.appendChild(tablehead);
       thistable.appendChild(tablebody);
-      var nowdata = tabledata.slice(0,9);
-
-      headtdata.forEach(function(value){
+      headtdata.forEach(function (value) {
         var thisattr = document.createElement('th');
         tablehead.appendChild(thisattr);
         thisattr.innerHTML = value;
-        });
-      tabledata.forEach(function(value){
+      });
+      tabledata.forEach(function (value) {
         var thisrow = document.createElement('tr');
         tablebody.appendChild(thisrow);
         var attrvalue = [];
-        for(var i in value){
+        for (var i in value) {
           attrvalue.push(value[i])
         }
+        if (attrvalue.length > headtdata.length) {//如果该数组属性比选择的属性多  
+          attrvalue.splice(headtdata.length, attrvalue.length - headtdata.length);
+        }
+        if (attrvalue.length < headtdata.length) {//如果该数组属性比选择的属性多  
+          for (var j = 0; j < headtdata.length - attrvalue.length; j++) {
+            attrvalue.push(null);
+          }
+        }
         console.log(attrvalue);
-        attrvalue.forEach(function(value){
+        attrvalue.forEach(function (value) {
           thiscube = document.createElement('td');
           thisrow.appendChild(thiscube);
-          thiscube.innerHTML=value;
+          thiscube.innerHTML = value;
         })
       })
-      
+    }
+  }
+  function repage(i, total) {
+    console.log('repaging');
+    document.getElementById('righttable').innerHTML = null;
+    console.log(total);
+    console.log(i);
+    var a =i*5-5;
+    var b = a+5;
+    console.log(total.slice(a,b));
+    drawpage(total.slice(i * 5, i * 5 + 5), total);
+  }
+  function changetable() {//画表格
+    document.getElementById('righttable').innerHTML = null;
+    tablesets = $('#main div:last').text().split('.');
+    console.log(tablesets);
+    if (tablesets) {
+      console.log(tablesets);
+      var intotable = drawtable(tablesets);//传入画表格的数据
+      console.log(intotable);
+      if (intotable.length > 5) {
+        drawpage(intotable.slice(0, 5), intotable);
+        drawbutton(intotable.length, intotable);
+      } else {
+        console.log(intotable);
+        drawpage(intotable, intotable);
+        document.getElementById('paging').style.visibility = 'hidden';
+        document.getElementById('number').innerHTML = null;
+      }
     }
     var nowtitle = $('#tableinfo');
     console.log(nowtitle);
@@ -233,7 +306,10 @@
     justify-content: flex-start;
   }
 
-  table,th,td,tr {
+  table,
+  th,
+  td,
+  tr {
     text-align: center;
     font-size: 12px;
     border: 1px solid black;
@@ -247,6 +323,19 @@
 
   a {
     text-decoration: none;
+  }
+
+  #rightcontent {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  #paging {
+    visibility: hidden;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
   }
 </style>
 
