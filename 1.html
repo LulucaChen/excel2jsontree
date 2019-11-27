@@ -159,7 +159,7 @@
     if (val > 5) {
       document.getElementById('paging').style.visibility = 'visible';
       if (val / 5 < 5) {
-        for (var i = 0; i < Math.ceil(val / 5); i++) {
+        for (let i = 0; i < Math.ceil(val / 5); i++) {
           var nowbutton = document.createElement('button');
           nowbutton.className = 'obnumber';
           nowbutton.onclick = function () {
@@ -219,10 +219,10 @@
     document.getElementById('righttable').innerHTML = null;
     console.log(total);
     console.log(i);
-    var a =i*5-5;
-    var b = a+5;
+    var a = i*5-5;
+    var b = i*5;
     console.log(total.slice(a,b));
-    drawpage(total.slice(i * 5, i * 5 + 5), total);
+    drawpage(total.slice(a,b), total);
   }
   function changetable() {//画表格
     document.getElementById('righttable').innerHTML = null;
